@@ -21,7 +21,7 @@ multidict==6.7.0
 packaging==25.0
 Pillow==10.4.0
 propcache==0.4.1
-psycopg[binary,pool]==3.2.1
+psycopg[binary]==3.2.12
 PyJWT==2.10.1
 python-dotenv==1.0.1
 pytz==2025.2
@@ -33,6 +33,7 @@ typing_extensions==4.15.0
 tzdata==2025.2
 urllib3==2.5.0
 yarl==1.22.0
+
 
 
 
