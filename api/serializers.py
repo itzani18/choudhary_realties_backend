@@ -47,6 +47,11 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class InquirySerializer(serializers.ModelSerializer):
+    email = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    location = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    message = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Inquiry
-        fields = "__all__"
+        fields = ["id", "name", "phone", "email", "location", "message", "created_at"]
+        read_only_fields = ["created_at"]
