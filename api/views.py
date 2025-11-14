@@ -11,6 +11,12 @@ from .permissions import IsSuperUser
 
 import os, requests
 from django.core.mail import send_mail
+import threading
+
+def run_async(func, *args, **kwargs):
+    thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+    thread.daemon = True
+    thread.start()
 
 # ----------------------------------------
 # PROPERTY VIEWSET (CREATE/UPDATE = ADMIN)
@@ -91,7 +97,7 @@ class PropertyImageViewSet(viewsets.ModelViewSet):
 
 
 # ----------------------------------------
-# INQUIRY VIEWSET
+# INQUIRY VIEWSET (FINAL ASYNC VERSION)
 # ----------------------------------------
 class InquiryViewSet(viewsets.ModelViewSet):
     queryset = Inquiry.objects.all().order_by("-created_at")
@@ -102,16 +108,10 @@ class InquiryViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         return [IsSuperUser()]
 
-    def create(self, request, *args, **kwargs):
-        print("INQUIRY RECEIVED >>> running create()")
-
-        serializer = InquirySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        inquiry = serializer.save()
-
-        print("Validated & Saved to DB")
-
-        # EMAIL SEND
+    # ------------------------------------
+    # ASYNC EMAIL SENDER
+    # ------------------------------------
+    def send_email_async(self, inquiry):
         try:
             send_mail(
                 subject=f"New Inquiry from {inquiry.name}",
@@ -124,12 +124,15 @@ class InquiryViewSet(viewsets.ModelViewSet):
                 ),
                 from_email=os.environ.get("EMAIL_HOST_USER"),
                 recipient_list=[os.environ.get("ADMIN_NOTIFICATION_EMAIL")],
-                fail_silently=False,
+                fail_silently=True
             )
         except Exception as e:
             print("EMAIL FAILED:", e)
 
-        # WHATSAPP SEND
+    # ------------------------------------
+    # ASYNC WHATSAPP SENDER
+    # ------------------------------------
+    def send_whatsapp_async(self, inquiry):
         try:
             TWILIO_SID = os.environ.get("TWILIO_ACCOUNT_SID")
             TWILIO_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
@@ -152,12 +155,27 @@ class InquiryViewSet(viewsets.ModelViewSet):
                 "Body": message_text
             }
 
-            response = requests.post(url, data=data, auth=(TWILIO_SID, TWILIO_TOKEN))
-            print("Twilio Response:", response.text)
-
+            requests.post(url, data=data, auth=(TWILIO_SID, TWILIO_TOKEN))
         except Exception as e:
             print("WHATSAPP FAILED:", e)
 
-        print("Inquiry COMPLETED")
+    # ------------------------------------
+    # MAIN CREATE VIEW — NON BLOCKING
+    # ------------------------------------
+    def create(self, request, *args, **kwargs):
+        print("INQUIRY RECEIVED >>> running create()")
+
+        serializer = InquirySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        inquiry = serializer.save()
+
+        print("Validated & Saved to DB")
+
+        # ASYNC TASKS
+        print("Starting async email + whatsapp...")
+        run_async(self.send_email_async, inquiry)
+        run_async(self.send_whatsapp_async, inquiry)
+
+        print("Response returned instantly, background tasks running...")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
