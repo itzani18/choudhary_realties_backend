@@ -55,3 +55,4 @@ class InquirySerializer(serializers.ModelSerializer):
         model = Inquiry
         fields = ["id", "name", "phone", "email", "location", "message", "created_at"]
         read_only_fields = ["created_at"]
+
