@@ -66,7 +66,9 @@ MIDDLEWARE = [
     "realestate_app.middleware.AutoLogout",
 ]
 ROOT_URLCONF = 'realestate_project.urls'
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://choudhary-realties-frontend.vercel.app",
+]
 
 TEMPLATES = [
     {
