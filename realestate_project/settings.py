@@ -69,6 +69,8 @@ ROOT_URLCONF = 'realestate_project.urls'
 CORS_ALLOWED_ORIGINS = [
     "https://choudhary-realties-frontend.vercel.app",
 ]
+CORS_ALLOW_CREDENTIALS = True
+
 
 TEMPLATES = [
     {
