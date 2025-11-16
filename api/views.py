@@ -138,7 +138,7 @@ class InquiryViewSet(viewsets.ModelViewSet):
             TWILIO_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
             TWILIO_WHATSAPP = os.environ.get("TWILIO_WHATSAPP_NUMBER")
             ADMIN_WHATSAPP = os.environ.get("ADMIN_WHATSAPP")
-
+    
             message_text = (
                 f"New Inquiry:\n"
                 f"Name: {inquiry.name}\n"
@@ -147,17 +147,18 @@ class InquiryViewSet(viewsets.ModelViewSet):
                 f"Location: {inquiry.location}\n"
                 f"Message: {inquiry.message}"
             )
-
+    
             url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_SID}/Messages.json"
             data = {
-                "From": TWILIO_WHATSAPP,
-                "To": ADMIN_WHATSAPP,
-                "Body": message_text
+                "From": f"whatsapp:{TWILIO_WHATSAPP}",
+                "To": f"whatsapp:{ADMIN_WHATSAPP}",
+                "Body": message_text,
             }
-
+    
             requests.post(url, data=data, auth=(TWILIO_SID, TWILIO_TOKEN))
         except Exception as e:
             print("WHATSAPP FAILED:", e)
+
 
     # ------------------------------------
     # MAIN CREATE VIEW — NON BLOCKING
