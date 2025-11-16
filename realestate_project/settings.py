@@ -186,10 +186,7 @@ SESSION_SAVE_EVERY_REQUEST = True             # Reset timer with every activity
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_USE_TLS = True
-EMAIL_HOST = os.environ.get("BREVO_HOST")
-EMAIL_PORT = int(os.environ.get("BREVO_PORT"))
-EMAIL_HOST_USER = os.environ.get("BREVO_USERNAME")
-EMAIL_HOST_PASSWORD = os.environ.get("BREVO_PASSWORD")
+
 DEFAULT_FROM_EMAIL = os.environ.get("BREVO_USERNAME")
 
 
