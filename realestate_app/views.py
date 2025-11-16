@@ -14,7 +14,9 @@ from .forms import PropertyForm, InquiryForm
 
 def landing_page(request):
     featured_props = Property.objects.filter(sold_out=False)[:6]
-    return JsonResponse({"featured": "Backend Running", "message": "OK", "featured_props": featured_props})
+    return render(request, "realestate_app/landing.html", {
+        "featured_props": featured_props
+    })
 
 
 # ============ PUBLIC DASHBOARD (ALL PROPERTIES) ============
