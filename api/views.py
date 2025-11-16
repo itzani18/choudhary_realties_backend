@@ -200,8 +200,6 @@ class InquiryViewSet(viewsets.ModelViewSet):
 
         # ASYNC TASKS
         print("Starting async email + whatsapp...")
-        print("EMAIL HOST:", os.environ.get("BREVO_USERNAME"))
-        print("EMAIL PASS:", os.environ.get("BREVO_PASSWORD"))
         run_async(self.send_email_async, inquiry)
         run_async(self.send_whatsapp_async, inquiry)
 
