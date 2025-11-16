@@ -1,28 +1,25 @@
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db.models import Q
-from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Q
+from django.conf import settings
 
 from .models import Property, PropertyImage
 from api.models import Inquiry
 from .forms import PropertyForm, InquiryForm
 
-from twilio.rest import Client
+# ============ HOME / LANDING PAGE ============
 
-
-# ==========================
-# ROOT URL (NO TEMPLATE)
-# ==========================
 def landing_page(request):
-    return JsonResponse({"status": "Backend Running", "message": "OK"})
+    featured_props = Property.objects.filter(sold_out=False)[:6]
+    return render(request, "realestate_app/landing.html", {
+        "featured_props": featured_props
+    })
 
 
-# ==========================
-# PUBLIC PROPERTIES LIST
-# ==========================
+# ============ PUBLIC DASHBOARD (ALL PROPERTIES) ============
+
 def public_dashboard(request):
     q = request.GET.get("q")
     price_filter = request.GET.get("price")
@@ -40,76 +37,194 @@ def public_dashboard(request):
     elif price_filter == "high":
         properties = properties.order_by("-price")
 
-    data = [
-        {
-            "id": prop.id,
-            "title": prop.title,
-            "price": prop.price,
-            "location": prop.location,
-            "sold_out": prop.sold_out,
-        }
-        for prop in properties
-    ]
-
-    return JsonResponse({"properties": data})
+    return render(request, "realestate_app/public_dashboard.html", {
+        "properties": properties
+    })
 
 
-# ==========================
-# ADMIN DASHBOARD (JSON ONLY)
-# ==========================
+# ============ ADMIN DASHBOARD (ONLY SUPERUSER) ============
+
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard(request):
+    q = request.GET.get("q")
     properties = Property.objects.all().order_by("-id")
 
-    data = [
-        {
-            "id": prop.id,
-            "title": prop.title,
-            "price": prop.price,
-            "location": prop.location,
-            "sold_out": prop.sold_out,
-        }
-        for prop in properties
-    ]
+    if q:
+        properties = properties.filter(
+            Q(title__icontains=q) |
+            Q(location__icontains=q)
+        )
 
-    return JsonResponse({"admin_properties": data})
+    return render(request, "realestate_app/admin_dashboard.html", {
+        "properties": properties
+    })
 
 
-# ==========================
-# PROPERTY DETAIL
-# ==========================
+# ============ ADD PROPERTY ============
+
+@user_passes_test(lambda u: u.is_superuser)
+def add_property(request):
+    if request.method == "POST":
+        form = PropertyForm(request.POST)
+        images = request.FILES.getlist("images")
+
+        if form.is_valid():
+            prop = form.save()
+
+            for img in images:
+                PropertyImage.objects.create(property=prop, image=img)
+
+            messages.success(request, "Property added successfully!")
+            return redirect("admin_dashboard")
+
+    else:
+        form = PropertyForm()
+
+    return render(request, "realestate_app/add_property.html", {
+        "form": form
+    })
+
+
+# ============ EDIT PROPERTY ============
+
+@user_passes_test(lambda u: u.is_superuser)
+def edit_property(request, property_id):
+    prop = get_object_or_404(Property, id=property_id)
+    if request.method == "POST":
+        form = PropertyForm(request.POST, instance=prop)
+        images = request.FILES.getlist("images")
+
+        if form.is_valid():
+            form.save()
+
+            for img in images:
+                PropertyImage.objects.create(property=prop, image=img)
+
+            messages.success(request, "Property updated successfully!")
+            return redirect("admin_dashboard")
+
+    else:
+        form = PropertyForm(instance=prop)
+
+    return render(request, "realestate_app/edit_property.html", {
+        "form": form,
+        "property": prop,
+        "images": prop.images.all()
+    })
+
+
+# ============ DELETE PROPERTY ============
+
+@user_passes_test(lambda u: u.is_superuser)
+def delete_property(request, property_id):
+    prop = get_object_or_404(Property, id=property_id)
+    if request.method == "POST":
+        prop.delete()
+        messages.success(request, "Property deleted successfully!")
+        return redirect("admin_dashboard")
+
+    return render(request, "realestate_app/delete_confirm.html", {
+        "property": prop
+    })
+
+
+# ============ TOGGLE SOLD OUT ============
+
+@user_passes_test(lambda u: u.is_superuser)
+def toggle_sold_out(request, property_id):
+    prop = get_object_or_404(Property, id=property_id)
+    prop.sold_out = not prop.sold_out
+    prop.save()
+
+    if prop.sold_out:
+        messages.success(request, f"{prop.title} marked as SOLD OUT.")
+    else:
+        messages.success(request, f"{prop.title} marked as AVAILABLE again.")
+
+    return redirect("admin_dashboard")
+
+
+# ============ PROPERTY DETAIL PAGE ============
+
 def property_detail(request, property_id):
     prop = get_object_or_404(Property, id=property_id)
+    form = InquiryForm()
 
-    data = {
-        "id": prop.id,
-        "title": prop.title,
-        "location": prop.location,
-        "price": prop.price,
-        "description": prop.description,
-    }
+    if request.method == "POST":
+        form = InquiryForm(request.POST)
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            inquiry.property = prop
+            inquiry.save()
 
-    return JsonResponse(data)
+            # WhatsApp
+            try:
+                send_whatsapp_message(
+                    inquiry.name,
+                    inquiry.phone,
+                    prop.title,
+                    prop.location
+                )
+            except:
+                pass
+
+            messages.success(request, "Inquiry submitted successfully!")
+            return redirect("property_detail", property_id=property_id)
+
+    return render(request, "realestate_app/property_detail.html", {
+        "property": prop,
+        "form": form
+    })
 
 
-# ==========================
-# CONTACT FORM (JSON ONLY)
-# ==========================
+# ============ CONTACT FORM (SEPARATE CONTACT PAGE) ============
+
 def contact(request):
     if request.method == "POST":
         form = InquiryForm(request.POST)
         if form.is_valid():
             inquiry = form.save()
-            return JsonResponse({"status": "success", "msg": "Message sent!"})
+            messages.success(request, "Message sent successfully!")
+            return redirect("landing")
 
-        return JsonResponse({"status": "error", "errors": form.errors}, status=400)
+    else:
+        form = InquiryForm()
 
-    return JsonResponse({"status": "contact-page"})
+    return render(request, "realestate_app/contact.html", {"form": form})
 
 
-# ==========================
-# WHATSAPP SENDER (UNCHANGED)
-# ==========================
+# ============ AGENT LOGIN ============
+
+def agent_login(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        return redirect("admin_dashboard")
+
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+
+        if user and user.is_superuser:
+            login(request, user)
+            return redirect("admin_dashboard")
+        else:
+            messages.error(request, "Invalid credentials")
+
+    return render(request, "realestate_app/agent_login.html")
+
+
+# ============ LOGOUT ============
+
+def agent_logout(request):
+    logout(request)
+    return redirect("landing")
+
+
+# ============ SEND WHATSAPP MESSAGE (Twilio) ============
+
+from twilio.rest import Client
+
 def send_whatsapp_message(name, phone, property_title, location):
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
 
