@@ -14,6 +14,8 @@ from django.core.mail import send_mail
 from django.core.mail import EmailMessage
 
 import threading
+import json
+import requests
 
 def run_async(func, *args, **kwargs):
     thread = threading.Thread(target=func, args=args, kwargs=kwargs)
@@ -114,34 +116,44 @@ class InquiryViewSet(viewsets.ModelViewSet):
     # ASYNC EMAIL SENDER
     # ------------------------------------
     def send_email_async(self, inquiry):
+        print("EMAIL API THREAD STARTED")
+    
         try:
-            print("EMAIL THREAD STARTED")
+            BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     
-            subject = f"New Inquiry from {inquiry.name}"
-            body = (
-                f"Name: {inquiry.name}\n"
-                f"Phone: {inquiry.phone}\n"
-                f"Email: {inquiry.email}\n"
-                f"Location: {inquiry.location}\n"
-                f"Message: {inquiry.message}\n"
-            )
+            url = "https://api.brevo.com/v3/smtp/email"
     
-            email = EmailMessage(
-                subject=subject,
-                body=body,
-                from_email=os.environ.get("BREVO_USERNAME"),
-                to=[os.environ.get("ADMIN_NOTIFICATION_EMAIL")],
-            )
+            data = {
+                "sender": {
+                    "email": "realtorchoudhary@gmail.com",
+                    "name": "Choudhary Realties"
+                },
+                "to": [
+                    {"email": os.environ.get("ADMIN_NOTIFICATION_EMAIL")}
+                ],
+                "subject": f"New Inquiry from {inquiry.name}",
+                "textContent": (
+                    f"Name: {inquiry.name}\n"
+                    f"Phone: {inquiry.phone}\n"
+                    f"Email: {inquiry.email}\n"
+                    f"Location: {inquiry.location}\n"
+                    f"Message: {inquiry.message}\n"
+                )
+            }
     
-            email.send(fail_silently=False)
-            print("EMAIL HOST:", os.environ.get("BREVO_USERNAME"))
-            print("EMAIL PASS:", os.environ.get("BREVO_PASSWORD"))
-            print("EMAIL SENT SUCCESSFULLY")
+            headers = {
+                "accept": "application/json",
+                "api-key": BREVO_API_KEY,
+                "content-type": "application/json"
+            }
+    
+            response = requests.post(url, data=json.dumps(data), headers=headers)
+    
+            print("BREVO RESPONSE:", response.status_code, response.text)
     
         except Exception as e:
-            print("EMAIL FAILED >>>", e)
-
-    
+            print("BREVO API EMAIL FAILED >>>", e)
+        
 
     # ------------------------------------
     # ASYNC WHATSAPP SENDER
