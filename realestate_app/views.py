@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
 from django.conf import settings
 from django.http import JsonResponse
-
+from django.http import HttpResponse
 from .models import Property, PropertyImage
 from api.models import Inquiry
 from .forms import PropertyForm, InquiryForm
@@ -14,9 +14,7 @@ from .forms import PropertyForm, InquiryForm
 
 def landing_page(request):
     featured_props = Property.objects.filter(sold_out=False)[:6]
-    return render(request, "realestate_app/landing.html", {
-        "featured_props": featured_props
-    })
+    return HttpResponse("Running")
 
 
 # ============ PUBLIC DASHBOARD (ALL PROPERTIES) ============
