@@ -11,6 +11,8 @@ from .permissions import IsSuperUser
 
 import os, requests
 from django.core.mail import send_mail
+from django.core.mail import EmailMessage
+
 import threading
 
 def run_async(func, *args, **kwargs):
