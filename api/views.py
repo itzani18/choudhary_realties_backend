@@ -138,6 +138,7 @@ class InquiryViewSet(viewsets.ModelViewSet):
     
         except Exception as e:
             print("EMAIL FAILED >>>", e)
+
     
 
     # ------------------------------------
