@@ -184,14 +184,14 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True        # Logout on browser close
 SESSION_COOKIE_AGE = 600                      # 600 seconds = 10 minutes
 SESSION_SAVE_EVERY_REQUEST = True             # Reset timer with every activity
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_USE_TLS = True
 EMAIL_HOST = os.environ.get("BREVO_HOST")
 EMAIL_PORT = int(os.environ.get("BREVO_PORT"))
-EMAIL_USE_TLS = True
-
 EMAIL_HOST_USER = os.environ.get("BREVO_USERNAME")
 EMAIL_HOST_PASSWORD = os.environ.get("BREVO_PASSWORD")
 DEFAULT_FROM_EMAIL = os.environ.get("BREVO_USERNAME")
+
 
 ADMIN_NOTIFICATION_EMAIL = os.environ.get("ADMIN_NOTIFICATION_EMAIL")
 
