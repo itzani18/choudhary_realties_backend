@@ -67,7 +67,7 @@ MIDDLEWARE = [
 ]
 ROOT_URLCONF = 'realestate_project.urls'
 CORS_ALLOWED_ORIGINS = [
-    "https://choudhary-realties-frontend.vercel.app",
+    "https://choudharyrealties.vercel.app/",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
