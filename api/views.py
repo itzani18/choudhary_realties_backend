@@ -119,9 +119,13 @@ class InquiryViewSet(viewsets.ModelViewSet):
         print("EMAIL API THREAD STARTED")
     
         try:
-            BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
-    
             url = "https://api.brevo.com/v3/smtp/email"
+    
+            headers = {
+                "accept": "application/json",
+                "api-key": os.environ.get("BREVO_API_KEY"),
+                "content-type": "application/json"
+            }
     
             data = {
                 "sender": {
@@ -141,18 +145,12 @@ class InquiryViewSet(viewsets.ModelViewSet):
                 )
             }
     
-            headers = {
-                "accept": "application/json",
-                "api-key": BREVO_API_KEY,
-                "content-type": "application/json"
-            }
-    
-            response = requests.post(url, data=json.dumps(data), headers=headers)
-    
-            print("BREVO RESPONSE:", response.status_code, response.text)
+            r = requests.post(url, headers=headers, data=json.dumps(data))
+            print("BREVO API RESPONSE:", r.status_code, r.text)
     
         except Exception as e:
-            print("BREVO API EMAIL FAILED >>>", e)
+            print("BREVO API ERROR:", e)
+
         
 
     # ------------------------------------
