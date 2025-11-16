@@ -124,7 +124,7 @@ class InquiryViewSet(viewsets.ModelViewSet):
                 ),
                 from_email=os.environ.get("EMAIL_HOST_USER"),
                 recipient_list=[os.environ.get("ADMIN_NOTIFICATION_EMAIL")],
-                fail_silently=True
+                fail_silently=False
             )
         except Exception as e:
             print("EMAIL FAILED:", e)
