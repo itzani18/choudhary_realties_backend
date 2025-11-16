@@ -115,8 +115,6 @@ class InquiryViewSet(viewsets.ModelViewSet):
         try:
             print("EMAIL THREAD STARTED")
     
-            from django.core.mail import EmailMessage
-    
             subject = f"New Inquiry from {inquiry.name}"
             body = (
                 f"Name: {inquiry.name}\n"
@@ -129,17 +127,16 @@ class InquiryViewSet(viewsets.ModelViewSet):
             email = EmailMessage(
                 subject=subject,
                 body=body,
-                from_email=os.environ.get("EMAIL_HOST_USER"),
+                from_email=os.environ.get("BREVO_USERNAME"),
                 to=[os.environ.get("ADMIN_NOTIFICATION_EMAIL")],
             )
     
             email.send(fail_silently=False)
-    
             print("EMAIL SENT SUCCESSFULLY")
     
         except Exception as e:
-            print("EMAIL FAILED >>> ", e)
-
+            print("EMAIL FAILED >>>", e)
+    
 
     # ------------------------------------
     # ASYNC WHATSAPP SENDER
