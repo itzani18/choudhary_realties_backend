@@ -134,6 +134,8 @@ class InquiryViewSet(viewsets.ModelViewSet):
             )
     
             email.send(fail_silently=False)
+            print("EMAIL HOST:", os.environ.get("BREVO_USERNAME"))
+            print("EMAIL PASS:", os.environ.get("BREVO_PASSWORD"))
             print("EMAIL SENT SUCCESSFULLY")
     
         except Exception as e:
@@ -186,8 +188,8 @@ class InquiryViewSet(viewsets.ModelViewSet):
 
         # ASYNC TASKS
         print("Starting async email + whatsapp...")
-        print("EMAIL HOST:", os.environ.get("EMAIL_HOST_USER"))
-        print("EMAIL PASS:", os.environ.get("EMAIL_HOST_PASSWORD"))
+        print("EMAIL HOST:", os.environ.get("BREVO_USERNAME"))
+        print("EMAIL PASS:", os.environ.get("BREVO_PASSWORD"))
         run_async(self.send_email_async, inquiry)
         run_async(self.send_whatsapp_async, inquiry)
 
