@@ -113,21 +113,33 @@ class InquiryViewSet(viewsets.ModelViewSet):
     # ------------------------------------
     def send_email_async(self, inquiry):
         try:
-            send_mail(
-                subject=f"New Inquiry from {inquiry.name}",
-                message=(
-                    f"Name: {inquiry.name}\n"
-                    f"Phone: {inquiry.phone}\n"
-                    f"Email: {inquiry.email}\n"
-                    f"Location: {inquiry.location}\n"
-                    f"Message: {inquiry.message}\n"
-                ),
-                from_email=os.environ.get("EMAIL_HOST_USER"),
-                recipient_list=[os.environ.get("ADMIN_NOTIFICATION_EMAIL")],
-                fail_silently=False
+            print("EMAIL THREAD STARTED")
+    
+            from django.core.mail import EmailMessage
+    
+            subject = f"New Inquiry from {inquiry.name}"
+            body = (
+                f"Name: {inquiry.name}\n"
+                f"Phone: {inquiry.phone}\n"
+                f"Email: {inquiry.email}\n"
+                f"Location: {inquiry.location}\n"
+                f"Message: {inquiry.message}\n"
             )
+    
+            email = EmailMessage(
+                subject=subject,
+                body=body,
+                from_email=os.environ.get("EMAIL_HOST_USER"),
+                to=[os.environ.get("ADMIN_NOTIFICATION_EMAIL")],
+            )
+    
+            email.send(fail_silently=False)
+    
+            print("EMAIL SENT SUCCESSFULLY")
+    
         except Exception as e:
-            print("EMAIL FAILED:", e)
+            print("EMAIL FAILED >>> ", e)
+
 
     # ------------------------------------
     # ASYNC WHATSAPP SENDER
@@ -174,6 +186,8 @@ class InquiryViewSet(viewsets.ModelViewSet):
 
         # ASYNC TASKS
         print("Starting async email + whatsapp...")
+        print("EMAIL HOST:", os.environ.get("EMAIL_HOST_USER"))
+        print("EMAIL PASS:", os.environ.get("EMAIL_HOST_PASSWORD"))
         run_async(self.send_email_async, inquiry)
         run_async(self.send_whatsapp_async, inquiry)
 
