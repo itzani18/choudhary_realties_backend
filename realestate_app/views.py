@@ -16,9 +16,6 @@ def landing_page(request):
     featured_props = Property.objects.filter(sold_out=False)[:6]
     return HttpResponse("Running")
 
-def health(request):
-    return JsonResponse({"status": "ok", "service": "realestate-backend"})
-    
 
 
 def public_dashboard(request):
