@@ -42,7 +42,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsSuperUser()]
+        return [IsAuthenticated()]
     
     def create(self, request, *args, **kwargs):
         serializer = PropertyCreateUpdateSerializer(data=request.data)
